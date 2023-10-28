@@ -1,15 +1,22 @@
 #include <stdio.h>
-#include "./Perceptron.h"
+#include "./Perceptron-1.h"
+#include <time.h>
 
 
 int main()
 {
-  uint64_t ranges[2] = { 2,2 };
+  clock_t start_time = clock();
+  t$pctr$Model model = f$pctr$_newModel(
+    2, (uint64_t[]){4,3},
+    0,0,
+    3,
+    0
+  );
 
-  t$pctr$Model model = f$pctr$newModel(2, ranges, 0, 2, -1);
-  printf("predict : %lld\n", f$pctr$Model$predict_raw(model, 99));
+  clock_t end_time = clock();
+  printf("\n 걸린 시간 : %ldms (%.3fs)", end_time-start_time, (end_time-start_time)/1000.0);
 
-  f$pctr$Model$releaseModel(model);
+  model = f$pctr$Model$release(model);
   
   getchar();
   return( 0 );
