@@ -387,7 +387,8 @@ t$pctr$LayersProp f$pctr$LayersProp$release( const t$pctr$LayersProp props )
 t$pctr$Model f$pctr$Model$release( const t$pctr$Model model )
 {
   f$pctr$Layer$release(model.input_layer);
-  f$pctr$Layers$release(model.middle_layer);
+  if  ( model.middle_layer.layer_count>=1 )
+    f$pctr$Layers$release(model.middle_layer);
   f$pctr$Layers$release(model.out_layer);
   return( f$pctr$structModel() );
 }
@@ -560,8 +561,12 @@ t$pctr$Model f$pctr$_newModel(
   prop = f$pctr$_newLayerProp(w_size, total_case, weight_init);
   result.input_layer = f$pctr$_newLayer(prop);
 
-  prop = f$pctr$_newLayerProp(w_size, middle_layer_node_count, weight_init);
-  result.middle_layer = f$pctr$_newLayersOneProp(middle_layer_count, prop);
+  if ( middle_layer_count>=1 )
+  {
+    prop = f$pctr$_newLayerProp(w_size, middle_layer_node_count, weight_init);
+    result.middle_layer = f$pctr$_newLayersOneProp(middle_layer_count, prop);
+  }
+  else result.middle_layer = f$pctr$structLayers();
 
   prop = f$pctr$_newLayerProp(w_size, output_range, weight_init);
   result.out_layer = f$pctr$_newLayers(f$pctr$_newLayersProp(1, &prop));
