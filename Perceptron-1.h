@@ -462,8 +462,8 @@ t$pctr$Layers f$pctr$_newLayers( const t$pctr$LayersProp props )
 
   result.layer_count = props.prop_count;
 
+  if(0)SKIP: result = f$pctr$structLayers();
   return( result );
-  SKIP:return( f$pctr$structLayers() );
 }
 
 // -- 레이어 설정 1개만 사용하는 레이어 배열 생성자.
@@ -543,6 +543,7 @@ t$pctr$Model f$pctr$_newModel(
   t$pctr$WeightSize$enum w_size = e$pctr$WeightSize$bit_null;
   uint64_t total_case = 1;
   t$pctr$LayerProp prop = f$pctr$structLayerProp();
+  t$pctr$LayersProp props = f$pctr$structLayersProp();
   if (w( input_count>=1 ))
   if (w( input_ranges!=0 ))
   if (w( output_range>=2 ))
@@ -569,7 +570,9 @@ t$pctr$Model f$pctr$_newModel(
   else result.middle_layer = f$pctr$structLayers();
 
   prop = f$pctr$_newLayerProp(w_size, output_range, weight_init);
-  result.out_layer = f$pctr$_newLayers(f$pctr$_newLayersProp(1, &prop));
+  props = f$pctr$_newLayersProp(1, &prop);
+  result.out_layer = f$pctr$_newLayers(props);
+  f$pctr$LayersProp$release(props);
   
   SKIP:
   return( result );
