@@ -1,5 +1,5 @@
-// --[[ include ]]
 
+// --[[ include ]]
 #include <stdio.h>
 #include <stdint.h>
 #include <malloc.h>
@@ -95,8 +95,8 @@ typedef struct t$pctr$Model{
 
 // --[[ function ]]
 
-// --[ 디버깅 ]
 
+// --[ 디버깅 ]
 // -- 조건부 화이트리스트 디버깅.
 #define CODE_DEBUG 1  // 1:on, 0:off
 uint8_t w( const int value )
@@ -126,8 +126,8 @@ uint8_t b( const int value )
   return( value );
 }
 
-// --[ etc ]
 
+// --[ etc ]
 // -- 입력 범위에 따른 가중치 변수 크기.
 t$pctr$WeightSize$enum f$pctr$_rangetosize( const uint64_t range )
 {
@@ -164,9 +164,21 @@ int64_t* f$pctr$_rawto8byte( t$pctr$node*const raw_node, const uint64_t index )
   return( index+(int64_t*)raw_node );
 }
 
+// -- 노드 위치 계산.
+//? 반환값은 num이지만 범위가 0 ~ max_num 으로 제한된다.
+//? num이 범위를 초과하는 경우 반환값은 제한이 걸리게 된 최소값(0) 또는 최대값(max_num)이 된다.
+uint64_t f$pctr$_indexcutter( const uint64_t max_num, const int64_t num )
+{
+  if ( num<0 ) return( 0 );
+  else if ( num<max_num ) return( num );
+  else return( max_num );
+  // if ( num>=max_num ) return( max_num );
+  // else if ( num>=0 ) return( num );
+  // else return( 0 );
+}
+
 
 // --[ 검사, 예외처리 ]
-
 // -- WeightSize::Size 검사
 uint8_t f$pctr$WeightSize$except( const t$pctr$WeightSize$enum size )
 {
@@ -237,7 +249,6 @@ uint8_t f$pctr$LayersProp$except( const t$pctr$LayersProp props )
 
 
 // --[ 정적 초기 생성자 ]
-
 // -- 레이어 생성자.
 t$pctr$Layer f$pctr$structLayer()
 {
@@ -345,7 +356,6 @@ t$pctr$Model f$pctr$structModel()
 
 
 // --[ 동적 객체 메모리 해제 ]
-
 // -- 레이어 해제.
 t$pctr$Layer f$pctr$Layer$release( const t$pctr$Layer layer )
 {
@@ -395,7 +405,6 @@ t$pctr$Model f$pctr$Model$release( const t$pctr$Model model )
 
 
 // --[ 동적 생성자 ]
-
 // -- 레이어 생성자.
 t$pctr$Layer f$pctr$_newLayer( const t$pctr$LayerProp prop )
 {
@@ -574,6 +583,87 @@ t$pctr$Model f$pctr$_newModel(
   result.out_layer = f$pctr$_newLayers(props);
   f$pctr$LayersProp$release(props);
   
+  SKIP:
+  return( result );
+}
+
+
+// --[ 모델 연산 ]
+// -- 레이어 연산.
+int64_t f$pctr$Layer$calc( const t$pctr$Layer layer, const int64_t x )
+{
+  int64_t result = 0;
+  uint64_t i = 0;
+  uint64_t calc_range = 0;
+  if (w( f$pctr$Layer$except(layer) ))
+  goto KEEP;
+  goto SKIP;
+  KEEP:;
+
+  calc_range = f$pctr$_indexcutter(layer.node_count, x);
+  switch ( layer.weight_size )
+  {
+    case e$pctr$WeightSize$bit_8:
+    result += *f$pctr$_rawto1byte(layer.raw_node, 0);
+    for ( i=1; i<calc_range; i++ )
+      result += *f$pctr$_rawto1byte(layer.raw_node, i);
+    break;
+    case e$pctr$WeightSize$bit_16:
+    result += *f$pctr$_rawto2byte(layer.raw_node, 0);
+    for ( i=0; i<calc_range; i++ )
+      result += *f$pctr$_rawto2byte(layer.raw_node, i);
+    break;
+    case e$pctr$WeightSize$bit_32:
+    result += *f$pctr$_rawto4byte(layer.raw_node, 0);
+    for ( i=0; i<calc_range; i++ )
+      result += *f$pctr$_rawto4byte(layer.raw_node, i);
+    break;
+    case e$pctr$WeightSize$bit_64:
+    result += *f$pctr$_rawto8byte(layer.raw_node, 0);
+    for ( i=0; i<calc_range; i++ )
+      result += *f$pctr$_rawto4byte(layer.raw_node, i);
+    break;
+    
+    default:goto SKIP;
+  }
+
+  SKIP:
+  return( result );
+}
+
+// -- 레이어 배열 연산.
+int64_t f$pctr$Layers$calc( const t$pctr$Layers layers, const int64_t x )
+{
+  int64_t result = 0;
+  uint64_t i = 0;
+  if (w( f$pctr$Layers$except(layers) ))
+  goto KEEP;
+  goto SKIP;
+  KEEP:;
+
+  result = f$pctr$Layer$calc(layers.layers[0], x);
+  for ( i=1; i<layers.layer_count; i++ )
+    result = f$pctr$Layer$calc(layers.layers[i], result);
+
+  SKIP:
+  return( result );
+}
+
+// -- 모델 연산.
+int64_t f$pctr$Model$calc( const t$pctr$Model model, const int64_t x )
+{
+  int64_t result = 0;
+  if (w( f$pctr$Layer$except(model.input_layer) ))
+  if (w( f$pctr$Layers$except(model.out_layer) ))
+  goto KEEP;
+  goto SKIP;
+  KEEP:;
+
+  result = f$pctr$Layer$calc(model.input_layer, x);
+  if ( model.middle_layer.layer_count!=0 )
+    f$pctr$Layers$calc(model.middle_layer, result);
+  result = f$pctr$Layers$calc(model.out_layer, result);
+
   SKIP:
   return( result );
 }
