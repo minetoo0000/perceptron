@@ -957,13 +957,15 @@ uint8_t f$pctr$Layer$_weightUpdate( const t$pctr$Layer layer, const uint8_t weig
 
 // -- 모델 학습 함수.
 //? 작업 성공 시 1을, 예외 발생 시 0을 반환.
-uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_data, const t$pctr$RawData target_data, const int64_t learning_rate )
+//? allow_error_count : 오답 허용 수.
+uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_data, const t$pctr$RawData target_data, const int64_t learning_rate, const uint64_t allow_error_count )
 {
   int32_t state = -1;
   //? 0:input_layer, 1:middle_layer, 2:out_layer
   int32_t select_layer = 0;
   uint64_t i = 0;
   int64_t input = 0;
+  int64_t next_x = 0;
   int64_t target = 0;
   uint64_t model_correct_count = 0;
   t$pctr$CalcResult in_result = f$pctr$structCalcResult();
@@ -980,42 +982,21 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
   while ( 1 )
   {
     // -- 학습 끝내기, 종료.
-    if ( state==-2 )
+    if ( state==-3 )
     {
       middle_results = f$pctr$CalcResults$release(middle_results);
       out_results = f$pctr$CalcResults$release(out_results);
       break;
     }
-    
-    // -- 초기화.
-    else if ( state==-1 )
+
+    // -- 다음 입력 값으로 업데이트.
+    else if ( state==-2 )
     {
       state = 0;
-      
-      select_layer = 0;
-      model_correct_count = 0;
-      i = 0;
-      input = 0;
-      target = 0;
-      in_result = f$pctr$structCalcResult();
-      //? 메모리 해제, 초기화 겸용.
-      middle_results = f$pctr$CalcResults$release(middle_results);
-      out_results = f$pctr$CalcResults$release(out_results);
-    }
-
-    // -- 이번 학습 주기 초기화 및 다음 입력 값으로 업데이트.
-    else if ( state==0 )
-    {
-      state++;
-
-      select_layer = 0;
-      in_result = f$pctr$structCalcResult();
-      //? 메모리 해제.
-      middle_results = f$pctr$CalcResults$release(middle_results);
-      out_results = f$pctr$CalcResults$release(out_results);
 
       //? 다음 입력값 가져오기.
       input = f$pctr$RawData$get(input_data, i);
+      next_x = input;
 
       //? 정답도 가져오기.
       target = f$pctr$RawData$get(target_data, i);
@@ -1024,7 +1005,36 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
       i++;
       if ( i>=f$pctr$RawData$len(input_data) )
         i = 0;
+    }
+    
+    // -- 초기화.
+    else if ( state==-1 )
+    {
+      state = -2;
       
+      select_layer = 0;
+      model_correct_count = 0;
+      i = 0;
+      input = 0;
+      next_x = 0;
+      target = 0;
+      in_result = f$pctr$structCalcResult();
+      //? 메모리 해제, 초기화 겸용.
+      middle_results = f$pctr$CalcResults$release(middle_results);
+      out_results = f$pctr$CalcResults$release(out_results);
+    }
+
+    // -- 모델 입력 작업 초기화.
+    else if ( state==0 )
+    {
+      state++;
+
+      next_x = input;
+      select_layer = 0;
+      in_result = f$pctr$structCalcResult();
+      //? 메모리 해제.
+      middle_results = f$pctr$CalcResults$release(middle_results);
+      out_results = f$pctr$CalcResults$release(out_results);      
     }
     
     // -- 입력 레이어 연산.
@@ -1032,8 +1042,8 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
     {
       state++;
       
-      in_result = f$pctr$Layer$calc(model.input_layer, input);
-      input = in_result.result;
+      in_result = f$pctr$Layer$calc(model.input_layer, next_x);
+      next_x = in_result.result;
     }
 
     // -- 중간 레이어 연산.
@@ -1044,9 +1054,9 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
       //? 중간 레이어가 있는 경우에만.
       if ( model.middle_layer.layer_count>=1 )
       {
-        middle_results = f$pctr$Layers$calc(model.middle_layer, input);
+        middle_results = f$pctr$Layers$calc(model.middle_layer, next_x);
         //? 마지막으로 레이어 연산한 결과 가져오기.
-        input = middle_results.calc_results[middle_results.count-1].result;
+        next_x = middle_results.calc_results[middle_results.count-1].result;
       }
     }
 
@@ -1055,8 +1065,8 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
     {
       state++;
 
-      out_results = f$pctr$Layers$calc(model.out_layer, input);
-      input = out_results.calc_results[out_results.count-1].result;
+      out_results = f$pctr$Layers$calc(model.out_layer, next_x);
+      next_x = out_results.calc_results[out_results.count-1].result;
     }
 
     // -- 정오답 체크 및 모델 학습 완료 여부 검사.
@@ -1064,13 +1074,13 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
     else if ( state==4 )
     {
       // -- 정답이라면 다음 입력으로 넘어가기.
-      if ( input==target )
+      if ( next_x==target )
       {
-        state = 0;
+        state = -2;
         //? 모델이 연속으로 정답을 맞춘 횟수 업데이트.
         model_correct_count++;
         /////////////////////////
-        // printf("\n정답 횟수. %d", model_correct_count);
+        printf("\n정답 횟수. %d", model_correct_count);
       }
       // -- 오답이라면 탐색된 노드 인덱스 체크.
       else
@@ -1081,9 +1091,9 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
       }
 
       // -- 모든 입력에 대해 정답이라면 학습 완료.
-      if ( model_correct_count>=f$pctr$RawData$len(target_data) )
+      if ( (model_correct_count+allow_error_count)>=f$pctr$RawData$len(target_data) )
       {
-        state = -2;
+        state = -3;
 
         ////////////////////////////////////// 학습 완료 후가 너무 싱겁다..
         printf("\n모델 학습 완료.");
@@ -1094,18 +1104,16 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
     //? + 루트 갈림.
     else if ( state==5 )
     {
-      //? 마지막 input은 out_layer의 연산 결과 즉, 모델의 최종 연산 결과임.
-      const int64_t model_out = input;
-      const int64_t answer = f$pctr$RawData$get(target_data, i);
+      const uint8_t weight_direction = next_x<target;
       uint8_t success = 0;
-      uint64_t i = 0;
+      uint64_t loop = 0;
 
       // -- 입력 레이어 학습.
       if ( select_layer==0 )
       {
         select_layer=1;
-        
-        success = f$pctr$Layer$_weightUpdate(model.input_layer, model_out<answer, in_result.checked_index, learning_rate);
+
+        success = f$pctr$Layer$_weightUpdate(model.input_layer, weight_direction, in_result.checked_index, learning_rate);
         if (b( success==0 )) goto SKIP;
       }
       // -- 중간 레이어 학습.
@@ -1113,11 +1121,11 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
       {
         select_layer=2;
 
-        for ( i=0; i<model.middle_layer.layer_count; i++ )
+        for ( loop=0; loop<model.middle_layer.layer_count; loop++ )
         {
           success = f$pctr$Layer$_weightUpdate(
-            model.middle_layer.layers[i], model_out<answer,
-            middle_results.calc_results[middle_results.count-1].checked_index,
+            model.middle_layer.layers[loop], weight_direction,
+            middle_results.calc_results[loop].checked_index,
             learning_rate
           );
           if (b( success==0 )) goto SKIP;
@@ -1130,19 +1138,35 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         state++;
         select_layer=0;
 
-        for ( i=0; i<model.out_layer.layer_count; i++ )
+        for ( loop=0; loop<model.out_layer.layer_count; loop++ )
         {
           success = f$pctr$Layer$_weightUpdate(
-            model.out_layer.layers[i], model_out<answer,
-            out_results.calc_results[out_results.count-1].checked_index,
+            model.out_layer.layers[loop], weight_direction,
+            out_results.calc_results[loop].checked_index,
             learning_rate
           );
           if (b( success==0 )) goto SKIP;
         }
+
+
+        /////////////////////////////// 레이어 출력 디버깅.
+        // printf("\n target : %lld, model_out : %lld, input : %lld, weight : %s", target, next_x, input, weight_direction?"증가":"감소");
+        // //? 행 출력.
+        // for ( uint64_t row=0; row<14; row++ )
+        // {
+        //   //? 열 출력.
+        //   printf("\n%c%-3d", in_result.checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.input_layer.raw_data, row));
+        //   if ( row<4 )
+        //   printf(" %c%-3d", out_results.calc_results[0].checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.out_layer.layers[0].raw_data, row));
+        // }
+        // getchar();
+
+        
       }
+      else select_layer = 0;
     }
 
-    // -- 학습 시도 완료, 루트 반복.
+    // -- 학습 시도 완료, 오답이 출력되었던 현재 입력으로 다시 모델에 입력.
     else if ( state==6 )
     {
       state = 0;

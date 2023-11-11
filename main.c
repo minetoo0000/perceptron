@@ -10,7 +10,8 @@ int main( int argc, char* argv[] )
 
   printf("\n시작.");
 
-  uint64_t input_range[] = { 4, 3 };
+  // uint64_t input_range[] = { 4, 3 };
+  uint64_t input_range[] = { 14 };
   t$pctr$RawData input_data = f$pctr$newRawData(e$pctr$Size$bit_8, 6);
   f$pctr$RawData$set(input_data, 0, 13);
   f$pctr$RawData$set(input_data, 1, 10);
@@ -26,14 +27,14 @@ int main( int argc, char* argv[] )
   f$pctr$RawData$set(target_data, 4, 0);
   f$pctr$RawData$set(target_data, 5, 1);
   t$pctr$Model model = f$pctr$_newModel(
-    2, input_range,
+    1, input_range,
     0,0,
     4,
-    1
+    0
   );
-  start_time = clock();
-  f$pctr$Model$_fit(model, input_data, target_data, 1);
-  end_time = clock();
+  start_time = clock()/CLOCKS_PER_SEC;
+  f$pctr$Model$_fit(model, input_data, target_data, 1, 0);
+  end_time = clock()/CLOCKS_PER_SEC;
   printf("\n학습에 걸린 시간 : %ldms (%.3fs)", end_time-start_time, (end_time-start_time)/1000.0);
 
   for ( int i=0; i<=13; i++ )
