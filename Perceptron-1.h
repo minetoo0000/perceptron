@@ -1080,20 +1080,20 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         //? 모델이 연속으로 정답을 맞춘 횟수 업데이트.
         model_correct_count++;
         /////////////////////////
-        printf("\n정답 횟수. %d", model_correct_count);
+        // printf("\n정답 횟수. %llu", model_correct_count);
 
 
 
         /////////////////////////////// 레이어 출력 디버깅.
-        printf("\n target : %lld, model_out : %lld, input : %lld", target, next_x, input);
-        //? 행 출력.
-        for ( uint64_t row=0; row<14; row++ )
-        {
-          //? 열 출력.
-          printf("\n%c%-3d", in_result.checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.input_layer.raw_data, row));
-          if ( row<4 )
-          printf(" %c%-3d", out_results.calc_results[0].checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.out_layer.layers[0].raw_data, row));
-        }
+        // printf("\n target : %lld, model_out : %lld, input : %lld", target, next_x, input);
+        // //? 행 출력.
+        // for ( uint64_t row=0; row<14; row++ )
+        // {
+        //   //? 열 출력.
+        //   printf("\n%c%-3d", in_result.checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.input_layer.raw_data, row));
+        //   if ( row<4 )
+        //   printf(" %c%-3d", out_results.calc_results[0].checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.out_layer.layers[0].raw_data, row));
+        // }
         // getchar();
 
 
@@ -1172,15 +1172,15 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
 
 
         /////////////////////////////// 레이어 출력 디버깅.
-        printf("\n target : %lld, model_out : %lld, input : %lld, weight : %s", target, next_x, input, weight_direction?"증가":"감소");
-        //? 행 출력.
-        for ( uint64_t row=0; row<14; row++ )
-        {
-          //? 열 출력.
-          printf("\n%c%-3d", in_result.checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.input_layer.raw_data, row));
-          if ( row<4 )
-          printf(" %c%-3d", out_results.calc_results[0].checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.out_layer.layers[0].raw_data, row));
-        }
+        // printf("\n target : %lld, model_out : %lld, input : %lld, weight : %s", target, next_x, input, weight_direction?"증가":"감소");
+        // //? 행 출력.
+        // for ( uint64_t row=0; row<14; row++ )
+        // {
+        //   //? 열 출력.
+        //   printf("\n%c%-3d", in_result.checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.input_layer.raw_data, row));
+        //   if ( row<4 )
+        //   printf(" %c%-3d", out_results.calc_results[0].checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.out_layer.layers[0].raw_data, row));
+        // }
         // getchar();
 
         
