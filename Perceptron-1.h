@@ -928,11 +928,11 @@ int64_t f$pctr$Model$calc( const t$pctr$Model model, const int64_t x )
 //? false : 가중치 감소.
 //? learning_rate
 //? 가중치 변화량 설정.
-uint8_t f$pctr$Layer$_weightUpdate( const t$pctr$Layer layer, const uint8_t weight_direction, const uint64_t checked_index, const int64_t learning_rate )
+uint8_t f$pctr$Layer$_weightUpdate( const t$pctr$Layer layer, const uint8_t weight_direction, const t$pctr$CalcResult calc_result, const int64_t learning_rate )
 {
   int64_t get_weight = 0;
   if (w( f$pctr$RawData$except(layer.raw_data) ))
-  if (w( checked_index<f$pctr$RawData$len(layer.raw_data) ))
+  if (w( calc_result.checked_index<f$pctr$RawData$len(layer.raw_data) ))
   goto KEEP;
   goto SKIP;
   KEEP:;
@@ -940,15 +940,15 @@ uint8_t f$pctr$Layer$_weightUpdate( const t$pctr$Layer layer, const uint8_t weig
   //? 가중치 증가.
   if ( weight_direction )
   {
-    get_weight = f$pctr$RawData$get(layer.raw_data, checked_index);
-    f$pctr$RawData$set(layer.raw_data, checked_index, get_weight+learning_rate);
+    get_weight = f$pctr$RawData$get(layer.raw_data, calc_result.checked_index);
+    f$pctr$RawData$set(layer.raw_data, calc_result.checked_index, get_weight+learning_rate);
   }
 
-  //? 가중치 감소.
-  else
+  //? 가중치 감소, 연산 결과가 0보다 작아지지 않게 하기.
+  else if ( calc_result.result>=1 )
   {
-    get_weight = f$pctr$RawData$get(layer.raw_data, checked_index);
-    f$pctr$RawData$set(layer.raw_data, checked_index, get_weight-learning_rate);
+    get_weight = f$pctr$RawData$get(layer.raw_data, calc_result.checked_index);
+    f$pctr$RawData$set(layer.raw_data, calc_result.checked_index, get_weight-learning_rate);
   }
 
   return( 1 );
@@ -1034,7 +1034,7 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
       in_result = f$pctr$structCalcResult();
       //? 메모리 해제.
       middle_results = f$pctr$CalcResults$release(middle_results);
-      out_results = f$pctr$CalcResults$release(out_results);      
+      out_results = f$pctr$CalcResults$release(out_results);
     }
     
     // -- 입력 레이어 연산.
@@ -1130,7 +1130,7 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
       {
         select_layer=1;
 
-        success = f$pctr$Layer$_weightUpdate(model.input_layer, weight_direction, in_result.checked_index, learning_rate);
+        success = f$pctr$Layer$_weightUpdate(model.input_layer, weight_direction, in_result, learning_rate);
         if (b( success==0 )) goto SKIP;
       }
       // -- 중간 레이어 학습.
@@ -1142,7 +1142,7 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         {
           success = f$pctr$Layer$_weightUpdate(
             model.middle_layer.layers[loop], weight_direction,
-            middle_results.calc_results[loop].checked_index,
+            middle_results.calc_results[loop],
             learning_rate
           );
           if (b( success==0 )) goto SKIP;
@@ -1159,7 +1159,7 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         {
           success = f$pctr$Layer$_weightUpdate(
             model.out_layer.layers[loop], weight_direction,
-            out_results.calc_results[loop].checked_index,
+            out_results.calc_results[loop],
             learning_rate
           );
           if (b( success==0 )) goto SKIP;
