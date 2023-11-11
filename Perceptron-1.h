@@ -928,7 +928,7 @@ int64_t f$pctr$Model$calc( const t$pctr$Model model, const int64_t x )
 //? false : 가중치 감소.
 //? learning_rate
 //? 가중치 변화량 설정.
-uint8_t f$pctr$Layer$_weightUpdate( const t$pctr$Layer layer, const uint8_t weight_direction, const t$pctr$CalcResult calc_result, const int64_t learning_rate )
+uint8_t f$pctr$Layer$_weightUpdate( const t$pctr$Layer layer, const uint8_t weight_direction, const t$pctr$CalcResult calc_result, const int64_t max_weight, const int64_t learning_rate )
 {
   int64_t get_weight = 0;
   if (w( f$pctr$RawData$except(layer.raw_data) ))
@@ -937,8 +937,8 @@ uint8_t f$pctr$Layer$_weightUpdate( const t$pctr$Layer layer, const uint8_t weig
   goto SKIP;
   KEEP:;
 
-  //? 가중치 증가.
-  if ( weight_direction )
+  //? 제한된 범위 내에서 가중치 증가
+  if ( weight_direction && calc_result.result<max_weight )
   {
     get_weight = f$pctr$RawData$get(layer.raw_data, calc_result.checked_index);
     f$pctr$RawData$set(layer.raw_data, calc_result.checked_index, get_weight+learning_rate);
@@ -1084,16 +1084,16 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
 
 
 
-        // /////////////////////////////// 레이어 출력 디버깅.
-        // printf("\n target : %lld, model_out : %lld, input : %lld", target, next_x, input);
-        // //? 행 출력.
-        // for ( uint64_t row=0; row<14; row++ )
-        // {
-        //   //? 열 출력.
-        //   printf("\n%c%-3d", in_result.checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.input_layer.raw_data, row));
-        //   if ( row<4 )
-        //   printf(" %c%-3d", out_results.calc_results[0].checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.out_layer.layers[0].raw_data, row));
-        // }
+        /////////////////////////////// 레이어 출력 디버깅.
+        printf("\n target : %lld, model_out : %lld, input : %lld", target, next_x, input);
+        //? 행 출력.
+        for ( uint64_t row=0; row<14; row++ )
+        {
+          //? 열 출력.
+          printf("\n%c%-3d", in_result.checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.input_layer.raw_data, row));
+          if ( row<4 )
+          printf(" %c%-3d", out_results.calc_results[0].checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.out_layer.layers[0].raw_data, row));
+        }
         // getchar();
 
 
@@ -1130,7 +1130,8 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
       {
         select_layer=1;
 
-        success = f$pctr$Layer$_weightUpdate(model.input_layer, weight_direction, in_result, learning_rate);
+        //////////////////////////////////////////////////////////// 아래 함수의 max_weight 인자 부분은 임시 방편으로 첫번째 출력 레이어의 경우의 수를 max_weight 값으로 사용하였다.
+        success = f$pctr$Layer$_weightUpdate(model.input_layer, weight_direction, in_result, model.setting.output_info.ranges[0]-1, learning_rate);
         if (b( success==0 )) goto SKIP;
       }
       // -- 중간 레이어 학습.
@@ -1143,6 +1144,8 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
           success = f$pctr$Layer$_weightUpdate(
             model.middle_layer.layers[loop], weight_direction,
             middle_results.calc_results[loop],
+            //////////////////////////////////////////////////////////// 아래 함수의 max_weight 인자 부분은 임시 방편으로 첫번째 출력 레이어의 경우의 수를 max_weight 값으로 사용하였다.
+            model.setting.output_info.ranges[0]-1,
             learning_rate
           );
           if (b( success==0 )) goto SKIP;
@@ -1160,6 +1163,8 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
           success = f$pctr$Layer$_weightUpdate(
             model.out_layer.layers[loop], weight_direction,
             out_results.calc_results[loop],
+            //////////////////////////////////////////////////////////// 아래 함수의 max_weight 인자 부분은 임시 방편으로 첫번째 출력 레이어의 경우의 수를 max_weight 값으로 사용하였다.
+            model.setting.output_info.ranges[0]-1,
             learning_rate
           );
           if (b( success==0 )) goto SKIP;
@@ -1167,15 +1172,15 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
 
 
         /////////////////////////////// 레이어 출력 디버깅.
-        // printf("\n target : %lld, model_out : %lld, input : %lld, weight : %s", target, next_x, input, weight_direction?"증가":"감소");
-        // //? 행 출력.
-        // for ( uint64_t row=0; row<14; row++ )
-        // {
-        //   //? 열 출력.
-        //   printf("\n%c%-3d", in_result.checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.input_layer.raw_data, row));
-        //   if ( row<4 )
-        //   printf(" %c%-3d", out_results.calc_results[0].checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.out_layer.layers[0].raw_data, row));
-        // }
+        printf("\n target : %lld, model_out : %lld, input : %lld, weight : %s", target, next_x, input, weight_direction?"증가":"감소");
+        //? 행 출력.
+        for ( uint64_t row=0; row<14; row++ )
+        {
+          //? 열 출력.
+          printf("\n%c%-3d", in_result.checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.input_layer.raw_data, row));
+          if ( row<4 )
+          printf(" %c%-3d", out_results.calc_results[0].checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.out_layer.layers[0].raw_data, row));
+        }
         // getchar();
 
         
