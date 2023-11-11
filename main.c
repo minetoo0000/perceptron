@@ -10,7 +10,6 @@ int main( int argc, char* argv[] )
 
   printf("\n시작.");
 
-  // uint64_t input_range[] = { 4, 3 };
   uint64_t input_range[] = { 14 };
   t$pctr$RawData input_data = f$pctr$newRawData(e$pctr$Size$bit_8, 6);
   f$pctr$RawData$set(input_data, 0, 13);
