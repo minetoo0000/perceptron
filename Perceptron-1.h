@@ -845,6 +845,19 @@ t$pctr$CalcResults f$pctr$newCalcResults( const uint64_t count )
 }
 
 
+// --[ 데이터 전처리 ]
+// -- 범위 변환 함수.
+uint64_t f$pctr$convRange( const uint64_t in_min, const uint64_t in_max, const uint64_t value, const uint64_t out_min, const uint64_t out_max )
+{
+  uint64_t result = 0;
+  const uint64_t IN_MAX = in_max-in_min;
+  const uint64_t OUT_MAX = out_max-out_min;
+  const long double OUT_PER_IN = (long double)OUT_MAX/IN_MAX;
+  result = (value-in_min)*OUT_PER_IN+out_min; 
+  return( result );
+}
+
+
 // --[ 모델 연산 ]
 // -- 레이어 연산.
 t$pctr$CalcResult f$pctr$Layer$calc( const t$pctr$Layer layer, const int64_t x )
@@ -1080,7 +1093,8 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         //? 모델이 연속으로 정답을 맞춘 횟수 업데이트.
         model_correct_count++;
         /////////////////////////
-        // printf("\n정답 횟수. %llu", model_correct_count);
+        if ( model_correct_count>10 )
+          printf("\n정답 횟수. %llu", model_correct_count);
 
 
 
