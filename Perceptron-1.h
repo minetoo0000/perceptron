@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <malloc.h>
+#include <time.h>
 
 // --[[ interface ]]
 
@@ -578,7 +579,7 @@ uint64_t f$pctr$RawData$len( const t$pctr$RawData raw_data )
 
 // --[ 동적 생성자 ]
 // -- RawData 생성자.
-t$pctr$RawData f$pctr$newRawData( const t$pctr$Size$enum size, uint64_t length )
+t$pctr$RawData f$pctr$newRawData( const t$pctr$Size$enum size, const uint64_t length )
 {
   t$pctr$RawData result = f$pctr$structRawData();
   uint64_t i = 0;
@@ -606,6 +607,25 @@ t$pctr$RawData f$pctr$newRawData( const t$pctr$Size$enum size, uint64_t length )
   return( result );
   SKIP:return( f$pctr$structRawData() );
 }
+
+
+// -- RawData 생성자 + 값 설정.
+t$pctr$RawData f$pctr$newRawData_set( const t$pctr$Size$enum size, const uint64_t length, const int64_t*const set_array )
+{
+  t$pctr$RawData result = f$pctr$structRawData();
+  uint64_t i = 0;
+  
+  result = f$pctr$newRawData(size, length);
+  if (b( f$pctr$RawData$except(result)==0 ))
+    goto SKIP;
+  
+  for ( i=0; i<length; i++ )
+    f$pctr$RawData$set(result, i, set_array[i]);
+
+  return( result );
+  SKIP:return( f$pctr$RawData$release(result) );
+}
+
 
 // -- ModelSet 생성자.
 //? 동적 메모리 할당함.
@@ -981,6 +1001,8 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
   int64_t next_x = 0;
   int64_t target = 0;
   uint64_t model_correct_count = 0;
+  uint64_t correct_count_set = 0;
+  double calc_start_time = 0.0;
   t$pctr$CalcResult in_result = f$pctr$structCalcResult();
   t$pctr$CalcResults middle_results = f$pctr$structCalcResults();
   t$pctr$CalcResults out_results = f$pctr$structCalcResults();
@@ -1006,6 +1028,9 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
     else if ( state==-2 )
     {
       state = 0;
+
+      //? 시간 측정 시작.
+      calc_start_time = clock()/(double)CLOCKS_PER_SEC;
 
       //? 다음 입력값 가져오기.
       input = f$pctr$RawData$get(input_data, i);
@@ -1035,6 +1060,7 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
       //? 메모리 해제, 초기화 겸용.
       middle_results = f$pctr$CalcResults$release(middle_results);
       out_results = f$pctr$CalcResults$release(out_results);
+      correct_count_set = f$pctr$RawData$len(target_data)-allow_error_count;
     }
 
     // -- 모델 입력 작업 초기화.
@@ -1093,8 +1119,8 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         //? 모델이 연속으로 정답을 맞춘 횟수 업데이트.
         model_correct_count++;
         /////////////////////////
-        if ( model_correct_count>10 )
-          printf("\n정답 횟수. %llu", model_correct_count);
+        // if ( model_correct_count>10 )
+          printf("\n Correct count : %llu/%llu | time : %llfs", model_correct_count, correct_count_set, (clock()/(double)CLOCKS_PER_SEC)-calc_start_time);
 
 
 
@@ -1119,15 +1145,18 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         state++;
         //? 한번이라도 틀리면 연속 정답 초기화.
         model_correct_count = 0;
+
+        ///////////////////////////////
+        printf("\n Coorect miss, weight update...");
       }
 
       // -- 모든 입력에 대해 정답이라면 학습 완료.
-      if ( (model_correct_count+allow_error_count)>=f$pctr$RawData$len(target_data) )
+      if ( model_correct_count>=correct_count_set )
       {
         state = -3;
 
         ////////////////////////////////////// 학습 완료 후가 너무 싱겁다..
-        printf("\n모델 학습 완료.");
+        printf("\n Finally.");
       }
     }
 

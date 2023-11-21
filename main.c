@@ -1,5 +1,6 @@
 #include "./Perceptron-1.h"
-#include "./dataset/train_set.c"
+#include "./dataset/img_train_set.c"
+// #include "./dataset/house_train_set.c"
 #include <time.h>
 
 
