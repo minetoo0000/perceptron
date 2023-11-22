@@ -1119,8 +1119,11 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         //? 모델이 연속으로 정답을 맞춘 횟수 업데이트.
         model_correct_count++;
         /////////////////////////
-        // if ( model_correct_count>10 )
+        if ( model_correct_count>398 )
+        {
           printf("\n Correct count : %llu/%llu | time : %llfs", model_correct_count, correct_count_set, (clock()/(double)CLOCKS_PER_SEC)-calc_start_time);
+          printf(" | input:%lld, target:%lld", input, target);
+        }
 
 
 
@@ -1174,7 +1177,10 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         select_layer=1;
 
         //////////////////////////////////////////////////////////// 아래 함수의 max_weight 인자 부분은 임시 방편으로 첫번째 출력 레이어의 경우의 수를 max_weight 값으로 사용하였다.
+        // success = f$pctr$Layer$_weightUpdate(model.input_layer, weight_direction, in_result, model.setting.output_info.ranges[0]-1, learning_rate);
+        int64_t lern = target>in_result.result?target-in_result.result:in_result.result-target;
         success = f$pctr$Layer$_weightUpdate(model.input_layer, weight_direction, in_result, model.setting.output_info.ranges[0]-1, learning_rate);
+        // success = f$pctr$Layer$_weightUpdate(model.input_layer, weight_direction, in_result, model.setting.output_info.ranges[0]-1, lern);
         if (b( success==0 )) goto SKIP;
       }
       // -- 중간 레이어 학습.
@@ -1184,12 +1190,16 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
 
         for ( loop=0; loop<model.middle_layer.layer_count; loop++ )
         {
+          int64_t lern = target>middle_results.calc_results[loop].result?target-middle_results.calc_results[loop].result:middle_results.calc_results[loop].result-target;
+
+          
           success = f$pctr$Layer$_weightUpdate(
             model.middle_layer.layers[loop], weight_direction,
             middle_results.calc_results[loop],
             //////////////////////////////////////////////////////////// 아래 함수의 max_weight 인자 부분은 임시 방편으로 첫번째 출력 레이어의 경우의 수를 max_weight 값으로 사용하였다.
             model.setting.output_info.ranges[0]-1,
             learning_rate
+            // lern
           );
           if (b( success==0 )) goto SKIP;
         }
@@ -1203,12 +1213,15 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
 
         for ( loop=0; loop<model.out_layer.layer_count; loop++ )
         {
+          int64_t lern = target>out_results.calc_results[loop].result?target-out_results.calc_results[loop].result:out_results.calc_results[loop].result-target;
+
           success = f$pctr$Layer$_weightUpdate(
             model.out_layer.layers[loop], weight_direction,
             out_results.calc_results[loop],
             //////////////////////////////////////////////////////////// 아래 함수의 max_weight 인자 부분은 임시 방편으로 첫번째 출력 레이어의 경우의 수를 max_weight 값으로 사용하였다.
             model.setting.output_info.ranges[0]-1,
             learning_rate
+            // lern
           );
           if (b( success==0 )) goto SKIP;
         }
