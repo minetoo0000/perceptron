@@ -12,13 +12,15 @@ int main()
   t$pctr$RawData target_datas = f$pctr$newRawData_set(e$pctr$Size$bit_8, v$house$len, v$house$target_data);
   printf("OK");
   
+  t$pctr$RawData check = f$pctr$newRawData(e$pctr$Size$bit_32, v$house$len);
+
   
   // -- 모델 준비.
   printf("\n 모델 준비 중. ");
   t$pctr$Model model = f$pctr$_newModel(
-    1, (uint64_t[]){ (1ULL<<29)+1 },
+    1, (uint64_t[]){ 401749+1 },
     0,0,
-    25,
+    100,
     0
   );
   printf("OK");
@@ -26,16 +28,15 @@ int main()
 
   // -- 모델 학습.
   printf("\n 모델 학습 시작. ");
-  clock_t start = clock();
+  double start = clock()/(double)CLOCKS_PER_SEC;
   f$pctr$Model$_fit(
     model,
     input_datas, target_datas,
     1, 0
   );
   printf("OK");
-  clock_t end = clock();
-
-  printf("\n 학습에 걸린 시간 : %ldms", start-end);
+  double end = clock()/(double)CLOCKS_PER_SEC;
+  printf("\n 학습에 걸린 시간 : %llfms", end-start);
 
 
   // -- 메모리 해제.

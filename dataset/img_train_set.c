@@ -1,5 +1,17 @@
 #include <stdint.h>
 
+// 'square (16)', 8x8px
+const unsigned char v$dataset$train_datasquare__16_ [] = {
+	0xff, 0xff, 0xe0, 0xe0, 0xe0, 0xe0, 0xe0, 0xe0
+};
+// 'square (15)', 8x8px
+const unsigned char v$dataset$train_datasquare__15_ [] = {
+	0xff, 0xff, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0, 0xc0
+};
+// 'square (14)', 8x8px
+const unsigned char v$dataset$train_datasquare__14_ [] = {
+	0xff, 0xff, 0xff, 0xe0, 0xe0, 0xe0, 0xe0, 0xe0
+};
 // 'square (13)', 8x8px
 const uint8_t v$dataset$train_datasquare__12_ [] = {
 	0xff, 0xff, 0xff, 0xe0, 0xe0, 0xe0, 0xe0, 0xe0
@@ -50,6 +62,24 @@ const uint8_t v$dataset$train_datasquare [] = {
 };
 
 
+
+
+// 'triangle (19)', 8x8px
+const unsigned char v$dataset$train_datatriangle__19_ [] = {
+	0xff, 0xf7, 0xf3, 0xe3, 0xe1, 0xc1, 0x80, 0x80
+};
+// 'triangle (18)', 8x8px
+const unsigned char v$dataset$train_datatriangle__18_ [] = {
+	0xff, 0xff, 0xff, 0xef, 0xe7, 0xc3, 0xff, 0xff
+};
+// 'triangle (17)', 8x8px
+const unsigned char v$dataset$train_datatriangle__17_ [] = {
+	0xff, 0xff, 0xff, 0xfb, 0xfb, 0xf1, 0xf1, 0xe0
+};
+// 'triangle (16)', 8x8px
+const unsigned char v$dataset$train_datatriangle__16_ [] = {
+	0xff, 0xff, 0xcf, 0xcf, 0x87, 0x83, 0x03, 0xff
+};
 // 'triangle (13)', 8x8px
 const uint8_t v$dataset$train_datatriangle__11_ [] = {
 	0xff, 0xff, 0xff, 0xcf, 0xcf, 0x87, 0x87, 0x03
@@ -94,6 +124,8 @@ const uint8_t v$dataset$train_datatriangle__2_ [] = {
 const uint8_t v$dataset$train_datatriangle [] = {
 	0xff, 0xfb, 0xf3, 0xf1, 0xe0, 0xe0, 0xc0, 0x80
 };
+
+
 
 // Array of all bitmaps for convenience. (Total bytes used to store images in = 640)
 const int v$dataset$train_data_arr_len = 20;

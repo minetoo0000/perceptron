@@ -1,12 +1,11 @@
-
 // --[[ include ]]
 #include <stdio.h>
 #include <stdint.h>
 #include <malloc.h>
 #include <time.h>
 
-// --[[ interface ]]
 
+// --[[ interface ]]
 typedef uint8_t t$pctr$node;
 typedef enum t$pctr$Size$enum{
   e$pctr$Size$bit_null=0,
@@ -520,27 +519,47 @@ t$pctr$Model f$pctr$Model$release( const t$pctr$Model model )
 
 // --[ etc 2 ]
 // -- raw to auto size - 자동.
-int64_t f$pctr$RawData$get( const t$pctr$RawData raw, const uint64_t index )
+uint64_t f$pctr$RawData$get( const t$pctr$RawData raw, const uint64_t index )
 {
+  uint64_t result = 0;
   if (w( f$pctr$RawData$except(raw) ))
   if (w( index>=0 ))
   goto KEEP;
   goto SKIP;
   KEEP:;
 
-  if ( raw.size==e$pctr$Size$bit_8 ) return( (int64_t)*(index+(int8_t*)raw.raw) );
-  else if ( raw.size==e$pctr$Size$bit_16 ) return( (int64_t)*(index+(int16_t*)raw.raw) );
-  else if ( raw.size==e$pctr$Size$bit_32 ) return( (int64_t)*(index+(int32_t*)raw.raw) );
+  if ( raw.size==e$pctr$Size$bit_8 ) result=(uint64_t)(*(index+(int8_t*)raw.raw));
+  else if ( raw.size==e$pctr$Size$bit_16 ) result=(uint64_t)(*(index+(int16_t*)raw.raw));
+  else if ( raw.size==e$pctr$Size$bit_32 ) result=(uint64_t)(*(index+(int32_t*)raw.raw));
   //? 마지막 경우 까지도 참이 아니라면 오류임.
-  else if (w( raw.size==e$pctr$Size$bit_64 )) return( *(index+(int64_t*)raw.raw) );
+  else if (w( raw.size==e$pctr$Size$bit_64 )) result=(uint64_t)*(index+(int64_t*)raw.raw);
   else goto SKIP;
 
+  return( result );
   SKIP:return( 0 );
 }
+// int64_t f$pctr$RawData$get( const t$pctr$RawData raw, const uint64_t index )
+// {
+//   if (w( f$pctr$RawData$except(raw) ))
+//   if (w( index>=0 ))
+//   goto KEEP;
+//   goto SKIP;
+//   KEEP:;
+
+//   if ( raw.size==e$pctr$Size$bit_8 ) return( (int64_t)*(index+(int8_t*)raw.raw) );
+//   else if ( raw.size==e$pctr$Size$bit_16 ) return( (int64_t)*(index+(int16_t*)raw.raw) );
+//   else if ( raw.size==e$pctr$Size$bit_32 ) return( (int64_t)*(index+(int32_t*)raw.raw) );
+//   //? 마지막 경우 까지도 참이 아니라면 오류임.
+//   else if (w( raw.size==e$pctr$Size$bit_64 )) return( *(index+(int64_t*)raw.raw) );
+//   else goto SKIP;
+
+//   SKIP:return( 0 );
+// }
+
 
 // -- raw - 값 설정.
 //? 함수 작업 성공 시 1, 예외처리 시 0을 반환.
-uint8_t f$pctr$RawData$set( const t$pctr$RawData raw, const uint64_t index, const int64_t set_value )
+uint8_t f$pctr$RawData$set( const t$pctr$RawData raw, const uint64_t index, const uint64_t set_value )
 {
   if (w( f$pctr$RawData$except(raw) ))
   if (w( index>=0 ))
@@ -549,11 +568,11 @@ uint8_t f$pctr$RawData$set( const t$pctr$RawData raw, const uint64_t index, cons
   goto SKIP;
   KEEP:;
 
-  if ( raw.size==e$pctr$Size$bit_8 ) *(index+(int8_t*)raw.raw) = (int8_t)set_value;
-  else if ( raw.size==e$pctr$Size$bit_16 ) *(index+(int16_t*)raw.raw) = (int16_t)set_value;
-  else if ( raw.size==e$pctr$Size$bit_32 ) *(index+(int32_t*)raw.raw) = (int32_t)set_value;
+  if ( raw.size==e$pctr$Size$bit_8 ) *(index+(uint8_t*)raw.raw) = (uint8_t)set_value;
+  else if ( raw.size==e$pctr$Size$bit_16 ) *(index+(uint16_t*)raw.raw) = (uint16_t)set_value;
+  else if ( raw.size==e$pctr$Size$bit_32 ) *(index+(uint32_t*)raw.raw) = (uint32_t)set_value;
   //? 마지막 경우 까지도 참이 아니라면 오류임.
-  else if (w( raw.size==e$pctr$Size$bit_64 )) *(index+(int64_t*)raw.raw) = set_value;
+  else if (w( raw.size==e$pctr$Size$bit_64 )) *(index+(uint64_t*)raw.raw) = (uint64_t)set_value;
   else goto SKIP;
   
   return( 1 );
@@ -813,22 +832,27 @@ t$pctr$Model f$pctr$_newModel(
     goto SKIP;
   result.stats = f$pctr$structModelStats();
 
-  //? 가중치 변수의 크기 구하기.
-  w_size = f$pctr$_rangetosize(output_range);
 
   //? 입력 레이어의 노드 수 구하기.
   for ( i=0; i<input_count; i++ ) total_case *= input_ranges[i];
+
+  //? 가중치 변수의 크기 구하기.
+  // w_size = f$pctr$_rangetosize(output_range);
+  w_size = f$pctr$_rangetosize(total_case-1);
 
   prop = f$pctr$_newLayerProp(w_size, total_case, weight_init);
   result.input_layer = f$pctr$_newLayer(prop);
 
   if ( middle_layer_count>=1 )
   {
+    w_size = f$pctr$_rangetosize(middle_layer_node_count-1);
     prop = f$pctr$_newLayerProp(w_size, middle_layer_node_count, weight_init);
     result.middle_layer = f$pctr$newLayersOneProp(middle_layer_count, prop);
   }
   else result.middle_layer = f$pctr$structLayers();
 
+  //? 출력 레이어.
+  w_size = f$pctr$_rangetosize(output_range-1);
   prop = f$pctr$_newLayerProp(w_size, output_range, weight_init);
   props = f$pctr$newLayersProp(1, &prop);
   result.out_layer = f$pctr$newLayers(props);
@@ -891,11 +915,34 @@ t$pctr$CalcResult f$pctr$Layer$calc( const t$pctr$Layer layer, const int64_t x )
   KEEP:;
 
   calc_range = f$pctr$_indexcutter(f$pctr$RawData$len(layer.raw_data)-1, x);
+
+  // switch ( layer.raw_data.size )
+  // {
+  //   case e$pctr$Size$bit_8:
+  //   for ( i=0; i<=calc_range; i++ )
+  //     result.result += (int8_t)f$pctr$RawData$get(layer.raw_data, i);
+  //   break;
+  //   case e$pctr$Size$bit_16:
+  //   for ( i=0; i<=calc_range; i++ )
+  //     result.result += (int16_t)f$pctr$RawData$get(layer.raw_data, i);
+  //   break;
+  //   case e$pctr$Size$bit_32:
+  //   for ( i=0; i<=calc_range; i++ )
+  //     result.result += (int32_t)f$pctr$RawData$get(layer.raw_data, i);
+  //   break;
+  //   case e$pctr$Size$bit_64:
+  //   for ( i=0; i<=calc_range; i++ )
+  //     result.result += (int64_t)f$pctr$RawData$get(layer.raw_data, i);
+  //   break;
+  //   default:;
+  // }
   for ( i=0; i<=calc_range; i++ )
-    result.result += f$pctr$RawData$get(layer.raw_data, i);
+  result.result += f$pctr$RawData$get(layer.raw_data, i);
+
 
   //? 마지막 활성화 노드의 인덱스 체크.
-  result.checked_index = i-1;
+  //? i-1 또는 calc_range 를 사용할 수 있다. calc_range가 더 적절해보인다.
+  result.checked_index = calc_range;
 
   SKIP:
   return( result );
@@ -1085,6 +1132,8 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
       next_x = in_result.result;
     }
 
+
+
     // -- 중간 레이어 연산.
     else if ( state==2 )
     {
@@ -1108,6 +1157,8 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
       next_x = out_results.calc_results[out_results.count-1].result;
     }
 
+
+
     // -- 정오답 체크 및 모델 학습 완료 여부 검사.
     //? + 루트 갈림.
     else if ( state==4 )
@@ -1119,10 +1170,10 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         //? 모델이 연속으로 정답을 맞춘 횟수 업데이트.
         model_correct_count++;
         /////////////////////////
-        if ( model_correct_count>398 )
+        // if ( model_correct_count>15 )
         {
-          printf("\n Correct count : %llu/%llu | time : %llfs", model_correct_count, correct_count_set, (clock()/(double)CLOCKS_PER_SEC)-calc_start_time);
-          printf(" | input:%lld, target:%lld", input, target);
+          // printf("\n Correct count : %llu/%llu | time : %llfs", model_correct_count, correct_count_set, (clock()/(double)CLOCKS_PER_SEC)-calc_start_time);
+          // printf(" | input:%llu, target:%llu, out:%lld", input, target, next_x);
         }
 
 
@@ -1135,7 +1186,7 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         //   //? 열 출력.
         //   printf("\n%c%-3d", in_result.checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.input_layer.raw_data, row));
         //   if ( row<4 )
-        //   printf(" %c%-3d", out_results.calc_results[0].checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.out_layer.layers[0].raw_data, row));
+        //   printf(" %c%-3d", out_results.calc_results[0].checked_index==row?'|':' ', (int)f$pctr$RawData$get(model.input_layer.raw_data, row));
         // }
         // getchar();
 
@@ -1150,7 +1201,9 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         model_correct_count = 0;
 
         ///////////////////////////////
-        printf("\n Coorect miss, weight update...");
+        // printf("\n Coorect miss, weight update...");
+        // printf(" | input:%lld, target:%lld, out:%lld, first weight:%lld", input, target, next_x, f$pctr$RawData$get(model.input_layer.raw_data, 1));
+        // printf(" | input:%lld, target:%lld, out:%lld", input, target, next_x);
       }
 
       // -- 모든 입력에 대해 정답이라면 학습 완료.
@@ -1263,3 +1316,4 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
   out_results = f$pctr$CalcResults$release(out_results);
   return( 0 );
 }
+
