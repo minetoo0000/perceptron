@@ -1158,7 +1158,6 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
     }
 
 
-
     // -- 정오답 체크 및 모델 학습 완료 여부 검사.
     //? + 루트 갈림.
     else if ( state==4 )
@@ -1172,8 +1171,8 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         /////////////////////////
         // if ( model_correct_count>15 )
         {
-          // printf("\n Correct count : %llu/%llu | time : %llfs", model_correct_count, correct_count_set, (clock()/(double)CLOCKS_PER_SEC)-calc_start_time);
-          // printf(" | input:%llu, target:%llu, out:%lld", input, target, next_x);
+          printf("\n Correct count : %llu/%llu | time : %llfs", model_correct_count, correct_count_set, (clock()/(double)CLOCKS_PER_SEC)-calc_start_time);
+          printf(" | input:%llu, target:%llu, out:%lld", input, target, next_x);
         }
 
 
@@ -1201,9 +1200,8 @@ uint8_t f$pctr$Model$_fit( const t$pctr$Model model, const t$pctr$RawData input_
         model_correct_count = 0;
 
         ///////////////////////////////
-        // printf("\n Coorect miss, weight update...");
-        // printf(" | input:%lld, target:%lld, out:%lld, first weight:%lld", input, target, next_x, f$pctr$RawData$get(model.input_layer.raw_data, 1));
-        // printf(" | input:%lld, target:%lld, out:%lld", input, target, next_x);
+        printf("\n Coorect miss, weight update...");
+        printf(" | input:%lld, target:%lld, out:%lld", input, target, next_x);
       }
 
       // -- 모든 입력에 대해 정답이라면 학습 완료.

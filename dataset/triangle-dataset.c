@@ -122,8 +122,8 @@ const uint8_t v$dataset$triangle$triangle__4_ [] = {
 };
 
 // Array of all bitmaps for convenience. (Total bytes used to store images in = 960)
-const int v$dataset$triangle$allArray_LEN = 30-2;
-const uint64_t* v$dataset$triangle$allArray[30-2] = {
+const int v$dataset$triangle$allArray_LEN = 30-3;
+const uint64_t* v$dataset$triangle$allArray[30-3] = {
 	(const uint64_t*)v$dataset$triangle$triangle,
 	(const uint64_t*)v$dataset$triangle$triangle__10_,
 	(const uint64_t*)v$dataset$triangle$triangle__11_,
@@ -133,13 +133,13 @@ const uint64_t* v$dataset$triangle$allArray[30-2] = {
 	(const uint64_t*)v$dataset$triangle$triangle__15_,
 	(const uint64_t*)v$dataset$triangle$triangle__16_,
 	(const uint64_t*)v$dataset$triangle$triangle__17_,
-	// (const uint64_t*)v$dataset$triangle$triangle__18_,
+	// (const uint64_t*)v$dataset$triangle$triangle__18_, //
 	(const uint64_t*)v$dataset$triangle$triangle__19_,
 	(const uint64_t*)v$dataset$triangle$triangle__20_,
 	(const uint64_t*)v$dataset$triangle$triangle__21_,
 	(const uint64_t*)v$dataset$triangle$triangle__22_,
 	(const uint64_t*)v$dataset$triangle$triangle__23_,
-	// (const uint64_t*)v$dataset$triangle$triangle__24_,
+	// (const uint64_t*)v$dataset$triangle$triangle__24_, //
 	(const uint64_t*)v$dataset$triangle$triangle__25_,
 	(const uint64_t*)v$dataset$triangle$triangle__26_,
 	(const uint64_t*)v$dataset$triangle$triangle__27_,
@@ -151,7 +151,7 @@ const uint64_t* v$dataset$triangle$allArray[30-2] = {
 	(const uint64_t*)v$dataset$triangle$triangle__4_,
 	(const uint64_t*)v$dataset$triangle$triangle__5_,
 	(const uint64_t*)v$dataset$triangle$triangle__6_,
-	(const uint64_t*)v$dataset$triangle$triangle__7_,
+	// (const uint64_t*)v$dataset$triangle$triangle__7_, //
 	(const uint64_t*)v$dataset$triangle$triangle__8_,
 	(const uint64_t*)v$dataset$triangle$triangle__9_
 };
